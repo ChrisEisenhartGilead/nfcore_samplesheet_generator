@@ -1,5 +1,5 @@
-#!/usr/bin/env 
-# Chris Eisenhart 
+#!/usr/bin/env
+# Chris Eisenhart
 
 """
 Take in a nfcore sample sheet and determine whether the formatting is valid
@@ -8,39 +8,48 @@ import sys
 import argparse
 import logging
 import shutil
-log = None # The global logger is defined, it will be initiated after the user commands are read
 
-def parseArgs(args): 
+log = None  # The global logger is defined, it will be initiated after the user commands are read
+
+
+def parseArgs(args):
     """
     Parse the command line arguments into useful python objects.  '--' variables are optional
     set_defaults only applies when the argument is not provided (it won't override)
     """
-    parser = argparse.ArgumentParser(description = __doc__)
-    parser.add_argument("pipeline",
-                        help = " The pipeline which the samplesheet belongs too",
-                        choices=["sarek","rnaseq"],
-                        action = "store")
-    parser.add_argument("sampleSheet",
-                        help = " The input nfcore RNAseq sample sheet",
-                        action = "store")
-    parser.add_argument("outFile",
-                        help = " The validated output sample sheet",
-                        action = "store")
-    parser.add_argument("--verbose",
-                        help = " The verbosity level for stdout messages (default INFO)",
-                        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-                        action = "store")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "pipeline",
+        help=" The pipeline which the samplesheet belongs too",
+        choices=["sarek", "rnaseq"],
+        action="store",
+    )
+    parser.add_argument(
+        "sampleSheet", help=" The input nfcore RNAseq sample sheet", action="store"
+    )
+    parser.add_argument(
+        "outFile", help=" The validated output sample sheet", action="store"
+    )
+    parser.add_argument(
+        "--verbose",
+        help=" The verbosity level for stdout messages (default INFO)",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        action="store",
+    )
 
-    parser.set_defaults(verbose = "INFO")
-    parser.set_defaults(isTsv = False)
+    parser.set_defaults(verbose="INFO")
+    parser.set_defaults(isTsv=False)
 
     options = parser.parse_args()
 
     # Basic logging config and update the logging verbosity level
-    logging.basicConfig(format='[%(filename)s %(funcName)s %(lineno)d %(levelname)s] %(message)s', level=options.verbose)
+    logging.basicConfig(
+        format="[%(filename)s %(funcName)s %(lineno)d %(levelname)s] %(message)s",
+        level=options.verbose,
+    )
 
     # Define a file for the log object to write too
-    fh = logging.FileHandler(__file__ + '.log')
+    fh = logging.FileHandler(__file__ + ".log")
 
     # Create the logger and add the file handler to it
     global log
@@ -88,7 +97,9 @@ def validate_rnaseq_samplesheet(file_in):
         HEADER = ["sample", "fastq_1", "fastq_2", "strandedness"]
         header = [x.strip('"') for x in fin.readline().strip().split(",")]
         if header[: len(HEADER)] != HEADER:
-            print(f"ERROR: Please check samplesheet header -> {','.join(header)} != {','.join(HEADER)}")
+            print(
+                f"ERROR: Please check samplesheet header -> {','.join(header)} != {','.join(HEADER)}"
+            )
             is_valid = False
 
         ## Check sample entries
@@ -117,7 +128,9 @@ def validate_rnaseq_samplesheet(file_in):
                 ## Check sample name entries
                 sample, fastq_1, fastq_2, strandedness = lspl[: len(HEADER)]
                 if sample.find(" ") != -1:
-                    print(f"WARNING: Spaces will be replaced by underscores for sample: {sample}")
+                    print(
+                        f"WARNING: Spaces will be replaced by underscores for sample: {sample}"
+                    )
                 if not sample:
                     print_error("Sample entry has not been specified!", "Line", line)
                     is_valid = False
@@ -127,7 +140,9 @@ def validate_rnaseq_samplesheet(file_in):
                     if fastq:
                         if fastq.find(" ") != -1:
                             print_error("FastQ file contains spaces!", "Line", line)
-                        if not fastq.endswith(".fastq.gz") and not fastq.endswith(".fq.gz"):
+                        if not fastq.endswith(".fastq.gz") and not fastq.endswith(
+                            ".fq.gz"
+                        ):
                             print_error(
                                 "FastQ file does not have extension '.fastq.gz' or '.fq.gz'!",
                                 "Line",
@@ -160,7 +175,9 @@ def validate_rnaseq_samplesheet(file_in):
                 elif sample and fastq_1 and not fastq_2:  ## Single-end short reads
                     sample_info = ["1", fastq_1, fastq_2, strandedness]
                 else:
-                    print_error("Invalid combination of columns provided!", "Line", line)
+                    print_error(
+                        "Invalid combination of columns provided!", "Line", line
+                    )
                     is_valid = False
 
                 ## Create sample mapping dictionary = {sample: [[ single_end, fastq_1, fastq_2, strandedness ]]}
@@ -169,7 +186,9 @@ def validate_rnaseq_samplesheet(file_in):
                     sample_mapping_dict[sample] = [sample_info]
                 else:
                     if sample_info in sample_mapping_dict[sample]:
-                        print_error("Samplesheet contains duplicate rows!", "Line", line)
+                        print_error(
+                            "Samplesheet contains duplicate rows!", "Line", line
+                        )
                         is_valid = False
                     else:
                         sample_mapping_dict[sample].append(sample_info)
@@ -178,7 +197,10 @@ def validate_rnaseq_samplesheet(file_in):
     if len(sample_mapping_dict) > 0:
         for sample in sorted(sample_mapping_dict.keys()):
             ## Check that multiple runs of the same sample are of the same datatype i.e. single-end / paired-end
-            if not all(x[0] == sample_mapping_dict[sample][0][0] for x in sample_mapping_dict[sample]):
+            if not all(
+                x[0] == sample_mapping_dict[sample][0][0]
+                for x in sample_mapping_dict[sample]
+            ):
                 print_error(
                     f"Multiple runs of a sample must be of the same datatype i.e. single-end or paired-end!",
                     "Sample",
@@ -187,7 +209,10 @@ def validate_rnaseq_samplesheet(file_in):
                 is_valid = False
 
             ## Check that multiple runs of the same sample are of the same strandedness
-            if not all(x[3] == sample_mapping_dict[sample][0][3] for x in sample_mapping_dict[sample]):
+            if not all(
+                x[3] == sample_mapping_dict[sample][0][3]
+                for x in sample_mapping_dict[sample]
+            ):
                 print_error(
                     f"Multiple runs of a sample must have the same strandedness!",
                     "Sample",
@@ -197,7 +222,7 @@ def validate_rnaseq_samplesheet(file_in):
     else:
         print_error(f"No entries to process!", "Samplesheet: {file_in}")
         is_valid = False
-    return is_valid 
+    return is_valid
 
 
 def validate_sarek_samplesheet(file_in):
@@ -217,10 +242,12 @@ def validate_sarek_samplesheet(file_in):
     with open(file_in, "r", encoding="utf-8-sig") as fin:
         ## Check header
         MIN_COLS = 7
-        HEADER = ["patient","sex","status","sample","lane","fastq_1","fastq_2"]
+        HEADER = ["patient", "sex", "status", "sample", "lane", "fastq_1", "fastq_2"]
         header = [x.strip('"') for x in fin.readline().strip().split(",")]
         if header[: len(HEADER)] != HEADER:
-            print(f"ERROR: Please check samplesheet header -> {','.join(header)} != {','.join(HEADER)}")
+            print(
+                f"ERROR: Please check samplesheet header -> {','.join(header)} != {','.join(HEADER)}"
+            )
             is_valid = False
 
         ## Check sample entries
@@ -247,9 +274,11 @@ def validate_sarek_samplesheet(file_in):
                     is_valid = False
 
                 ## Check sample name entries
-                patient, sex, status, sample, lane, fastq1, fastq2 = lspl[:len(HEADER)]
+                patient, sex, status, sample, lane, fastq1, fastq2 = lspl[: len(HEADER)]
                 if patient.find(" ") != -1:
-                    print(f"WARNING: Spaces will be replaced by underscores for patient: {patient}")
+                    print(
+                        f"WARNING: Spaces will be replaced by underscores for patient: {patient}"
+                    )
                 if not patient:
                     print_error("Patient entry has not been specified!", "Line", line)
                     is_valid = False
@@ -259,7 +288,9 @@ def validate_sarek_samplesheet(file_in):
                     if fastq:
                         if fastq.find(" ") != -1:
                             print_error("FastQ file contains spaces!", "Line", line)
-                        if not fastq.endswith(".fastq.gz") and not fastq.endswith(".fq.gz"):
+                        if not fastq.endswith(".fastq.gz") and not fastq.endswith(
+                            ".fq.gz"
+                        ):
                             print_error(
                                 "FastQ file does not have extension '.fastq.gz' or '.fq.gz'!",
                                 "Line",
@@ -285,7 +316,7 @@ def validate_sarek_samplesheet(file_in):
                     )
                     is_valid = False
 
-                ## Check status (tumor/normal) 
+                ## Check status (tumor/normal)
                 allowable_status_params = ["0", "1"]
                 if status:
                     if status not in allowable_status_params:
@@ -304,14 +335,16 @@ def validate_sarek_samplesheet(file_in):
                     is_valid = False
 
                 ## Create patient mapping dictionary = patient: [[patient, sex, status, sample, lane, fastq1, fastq2]]
-                patient_info = lspl[:len(HEADER)]
+                patient_info = lspl[: len(HEADER)]
                 if patient not in patient_mapping_dict:
                     patient_mapping_dict[patient] = [patient_info]
                 else:
                     is_duplicate = False
                     for prev_patient_info in patient_mapping_dict[patient]:
                         if patient_info == prev_patient_info:
-                            print_error("Samplesheet contains duplicate rows!", "Line", line)
+                            print_error(
+                                "Samplesheet contains duplicate rows!", "Line", line
+                            )
                             is_valid = False
                             is_duplicate = True
                     if not is_duplicate:
@@ -321,7 +354,10 @@ def validate_sarek_samplesheet(file_in):
     if len(patient_mapping_dict) > 0:
         for patient in sorted(patient_mapping_dict.keys()):
             ## Check that multiple runs of the same patient are of the same sexs
-            if not all(x[1] == patient_mapping_dict[patient][0][1] for x in patient_mapping_dict[patient]):
+            if not all(
+                x[1] == patient_mapping_dict[patient][0][1]
+                for x in patient_mapping_dict[patient]
+            ):
                 print_error(
                     f"Multiple runs of a patient must have the same sex!",
                     "Sample",
@@ -336,7 +372,8 @@ def validate_sarek_samplesheet(file_in):
 
 def main(args):
     """
-    """ 
+    Parse command line options
+    """
     options = parseArgs(args)
     if options.pipeline == "rnaseq":
         is_valid = validate_rnaseq_samplesheet(options.sampleSheet)
@@ -349,5 +386,6 @@ def main(args):
     else:
         print("The samplesheet provided failed validation")
 
-if __name__ == "__main__" :
+
+if __name__ == "__main__":
     sys.exit(main(sys.argv))
