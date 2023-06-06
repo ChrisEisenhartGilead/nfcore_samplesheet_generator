@@ -1,6 +1,25 @@
 #!/usr/bin/env nextflow
 // Import the required Nextflow modules
-nextflow.enable.dsl=2
+// nextflow.enable.dsl=2
+
+/*
+ * pipeline input parameters
+ */
+params.s3_dir = ""
+params.pipeline = ""
+params.output_file = ""
+params.sarek_status = ""
+params.sarek_mapping_table = ""
+
+log.info """\
+    N F   P I P E L I N E   S A M P L E S H E E T S
+    ===================================
+    s3_dir       : ${params.transcriptome_file}
+    pipeline     : ${params.reads}
+    output_file       : ${params.outdir}
+    """
+    .stripIndent()
+
 
 // Define the process for the first step
 process generate_samplesheet {
@@ -58,11 +77,6 @@ workflow {
   validate_samplesheet(generate_samplesheet.out, params.pipeline)
   
   // Define the final step to upload the validated CSV file back to S3
-  outputChannel = Channel.from(validate_samplesheet.out)
-
-  // Define the final step to upload the validated CSV file back to S3
-  Channel.from(validate_samplesheet.out).set { outputChannel }
-
-  upload(outputChannel, params.outputFileName)
+  upload(validate_samplesheet.out, params.outputFileName)
 }
 

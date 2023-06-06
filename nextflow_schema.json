@@ -1,0 +1,48 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
+    "title": ". pipeline parameters",
+    "description": "",
+    "type": "object",
+    "properties": {
+        "s3_dir": {
+            "type": "string",
+            "default": null,
+            "description": "The S3 bucket where the sample sheet .fastq files reside"
+        },
+        "pipeline": {
+            "type": "string",
+            "default": "rnaseq",
+            "description": "The Gilead nf-core pipeline to be ran",
+            "enum": [
+                "rnaseq",
+                "sarek"
+            ]
+        },
+        "output_file": {
+            "type": "string",
+            "default": null,
+            "description": "The output samplesheet name, it will be saved to S3 in the bucket s3://cb-multimodal-integration/work/runs/samplesheets/"
+        },
+        "sarek_status": {
+            "type": "string",
+            "default": "germline",
+            "description": "The sarek pipeline status; germline/tumor/paired",
+            "enum": [
+                "germline",
+                "tumor",
+                "paired"
+            ]
+        },
+        "sarek_mapping_table": {
+            "type": "string",
+            "default": null,
+            "description": "The sarek mapping table which provides sample:status mapping for paired runs"
+        }
+    },
+    "required": [
+        "s3_dir",
+        "pipeline",
+        "output_file"
+    ]
+}
