@@ -1,5 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://github.com/ChrisEisenhartGilead/nfcore_samplesheet_generator/blob/main/nextflow_schema.json",
     "title": ". pipeline parameters",
     "description": "",
     "type": "object",
