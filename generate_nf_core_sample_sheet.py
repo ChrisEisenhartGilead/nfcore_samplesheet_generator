@@ -139,6 +139,7 @@ def parse_sample_data(s3_path):
         # Identify the orientation index
         orient_index = find_orient_index(sub_components)
         sample_name = "_".join(sub_components[:orient_index])
+        lane = ""
     return sample_name, lane
 
 
