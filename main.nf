@@ -24,7 +24,7 @@ log.info """\
 // Define the process for the first step
 process generate_rnaseq_samplesheet {
   input:
-  val s3Dir
+  val s3_dir
  
   output:
   file 'output.csv'
@@ -32,13 +32,13 @@ process generate_rnaseq_samplesheet {
   script:
   """
   # Assuming you have a Python script named 'generate_nf_core_sample_sheet.py' in the same directory
-  python '${baseDir}/generate_nf_core_sample_sheet.py' rnaseq $s3Dir output.csv
+  python '${baseDir}/generate_nf_core_sample_sheet.py' rnaseq $s3_dir output.csv
   """
 }
 
 process generate_sarek_samplesheet {
   input:
-  val s3Dir
+  val s3_dir
   val sarek_status
  
   output:
@@ -47,13 +47,13 @@ process generate_sarek_samplesheet {
   script:
   """
   # Assuming you have a Python script named 'generate_nf_core_sample_sheet.py' in the same directory
-  python '${baseDir}/generate_nf_core_sample_sheet.py' sarek $s3Dir output.csv --sarek_status $sarek_status
+  python '${baseDir}/generate_nf_core_sample_sheet.py' sarek $s3_dir output.csv --sarek_status $sarek_status
   """
 }
 
 process generate_sarek_samplesheet_paired {
   input:
-  val s3Dir
+  val s3_dir
   val sarek_status
   val sarek_mapping_table
  
@@ -63,7 +63,7 @@ process generate_sarek_samplesheet_paired {
   script:
   """
   # Assuming you have a Python script named 'generate_nf_core_sample_sheet.py' in the same directory
-  python '${baseDir}/generate_nf_core_sample_sheet.py' sarek $s3Dir output.csv --sarek_status $sarek_status --sarek_mapping_file $sarek_mapping_table
+  python '${baseDir}/generate_nf_core_sample_sheet.py' sarek $s3_dir output.csv --sarek_status $sarek_status --sarek_mapping_file $sarek_mapping_table
   """
 }
 
@@ -99,7 +99,7 @@ process upload {
 // Define the workflow execution order
 workflow {
   // Define a channel to pass the S3 directory to the first step
-  s3DirChannel = Channel.fromPath(params.s3Dir)
+  s3DirChannel = Channel.fromPath(params.s3_dir)
 
   // Define the first step and connect it to the input channel
   if (params.pipeline == "rnaseq") {
