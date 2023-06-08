@@ -22,7 +22,7 @@ log.info """\
 
 
 // Define the process for the first step
-process generate_samplesheet {
+process generate_rnaseq_samplesheet {
   input:
   val s3Dir
  
@@ -33,6 +33,37 @@ process generate_samplesheet {
   """
   # Assuming you have a Python script named 'generate_nf_core_sample_sheet.py' in the same directory
   python '${baseDir}/generate_nf_core_sample_sheet.py' rnaseq $s3Dir output.csv
+  """
+}
+
+process generate_sarek_samplesheet {
+  input:
+  val s3Dir
+  val sarek_status
+ 
+  output:
+  file 'output.csv'
+  
+  script:
+  """
+  # Assuming you have a Python script named 'generate_nf_core_sample_sheet.py' in the same directory
+  python '${baseDir}/generate_nf_core_sample_sheet.py' sarek $s3Dir output.csv --sarek_status $sarek_status
+  """
+}
+
+process generate_sarek_samplesheet_paired {
+  input:
+  val s3Dir
+  val sarek_status
+  val sarek_mapping_table
+ 
+  output:
+  file 'output.csv'
+  
+  script:
+  """
+  # Assuming you have a Python script named 'generate_nf_core_sample_sheet.py' in the same directory
+  python '${baseDir}/generate_nf_core_sample_sheet.py' sarek $s3Dir output.csv --sarek_status $sarek_status --sarek_mapping_file $sarek_mapping_table
   """
 }
 
@@ -71,10 +102,18 @@ workflow {
   s3DirChannel = Channel.fromPath(params.s3Dir)
 
   // Define the first step and connect it to the input channel
-  generate_samplesheet(s3DirChannel) 
+  if (params.pipeline == "rnaseq") {
+    out = generate_rnaseq_samplesheet(s3DirChannel) 
+  } else if (params.pipeline == "sarek") {
+    if (params.sarek_mapping_file) {
+      out = generate_sarek_samplesheet_paired(s3DirChannel, params.sarek_status, params.sarek_mapping_file) 
+    } else {
+      out = generate_sarek_samplesheet(s3DirChannel, params.sarek_status) 
+    }
+  }
 
   // Connect the output of the first step to the input of the second step
-  validate_samplesheet(generate_samplesheet.out, params.pipeline)
+  validate_samplesheet(out, params.pipeline)
   
   // Define the final step to upload the validated CSV file back to S3
   upload(validate_samplesheet.out, params.outputFileName)
