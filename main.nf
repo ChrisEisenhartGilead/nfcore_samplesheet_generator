@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 // Import the required Nextflow modules
-// nextflow.enable.dsl=2
+nextflow.enable.dsl=2
 
 /*
  * pipeline input parameters
@@ -14,9 +14,9 @@ params.sarek_mapping_table = ""
 log.info """\
     N F   P I P E L I N E   S A M P L E S H E E T S
     ===================================
-    s3_dir       : ${params.transcriptome_file}
-    pipeline     : ${params.reads}
-    output_file       : ${params.outdir}
+    s3_dir       : ${params.s3_dir}
+    pipeline     : ${params.pipeline}
+    output_file       : ${params.output_file}
     """
     .stripIndent()
 
@@ -87,12 +87,12 @@ process validate_samplesheet {
 process upload {
   input:
   file validatedCsvFile
-  val outputFileName
+  val output_file
 
   script:
   """
   # Assuming you have AWS CLI configured and installed
-  aws s3 cp $validatedCsvFile s3://cb-multimodal-integration/work/runs/samplesheets/$outputFileName
+  aws s3 cp $validatedCsvFile s3://cb-multimodal-integration/work/runs/samplesheets/$output_file
   """
 }
 
@@ -116,6 +116,6 @@ workflow {
   validate_samplesheet(out, params.pipeline)
   
   // Define the final step to upload the validated CSV file back to S3
-  upload(validate_samplesheet.out, params.outputFileName)
+  upload(validate_samplesheet.out, params.output_file)
 }
 
